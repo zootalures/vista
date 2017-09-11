@@ -43,7 +43,9 @@ photos.each do |photo|
   payloads.push(payload)
 end
 
-puts payload.to_json
+result={}
+result[:result] = payloads 
+puts result.to_json
 STDERR.puts "done"
 
 

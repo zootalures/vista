@@ -19,9 +19,8 @@ def download_image(payload_in)
   temp_image_name
 end
 
-def upload_file(image_name, payload_in)
-  payload = payload_in
-  
+def upload_file(image_name)
+
   Aws.config.update({
     endpoint: ENV["MINIO_SERVER_URL"],
     credentials: Aws::Credentials.new(ENV["STORAGE_ACCESS_KEY"], ENV["STORAGE_SECRET_KEY"]),
@@ -42,19 +41,14 @@ def upload_file(image_name, payload_in)
 	link
 end
 
-pubnub = Pubnub.new(
-    subscribe_key: ENV["PUBNUB_SUBSCRIBE_KEY"],
-    publish_key: ENV["PUBNUB_PUBLISH_KEY"]
-)
-
 std_in = STDIN.read
 payload = JSON.parse(std_in)
 
-msg = "{\"type\":\"draw\",\"running\":true, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
-pubnub.publish(
-  message: msg,
-  channel: ENV["STORAGE_BUCKET"]
-)
+#msg = "{\"type\":\"draw\",\"running\":true, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
+#pubnub.publish(
+#  message: msg,
+#  channel: ENV["STORAGE_BUCKET"]
+#)
 
 temp_image_name = download_image(payload)
 
@@ -76,8 +70,8 @@ img.write(image_name)
 
 link = upload_file(image_name, payload)
 
-msg = "{\"type\":\"draw\",\"running\":false, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
-pubnub.publish(
-  message: msg,
-  channel: ENV["STORAGE_BUCKET"]
-)
+#msg = "{\"type\":\"draw\",\"running\":false, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
+#pubnub.publish(
+#  message: msg,
+#  channel: ENV["STORAGE_BUCKET"]
+#)

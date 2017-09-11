@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
-	"github.com/pubnub/go/messaging"
+
 )
 
 type payloadIn struct {
@@ -23,8 +22,8 @@ type payloadIn struct {
 func main() {
 	p := new(payloadIn)
 	json.NewDecoder(os.Stdin).Decode(p)
-	fnStart(os.Getenv("STORAGE_BUCKET"), p.Plate)
-	defer fnFinish(os.Getenv("STORAGE_BUCKET"), p.Plate)
+//	fnStart(os.Getenv("STORAGE_BUCKET"), p.Plate)
+//	defer fnFinish(os.Getenv("STORAGE_BUCKET"), p.Plate)
 
 	outfile := "working.jpg"
 
@@ -91,34 +90,34 @@ func downloadFile(filepath string, url string) (err error) {
 }
 
 var (
-	pubKey, subKey string
-	pn             *messaging.Pubnub
-	cbChannel      = make(chan []byte)
-	errChan        = make(chan []byte)
+//	pubKey, subKey string
+//	pn             *messaging.Pubnub
+	//cbChannel      = make(chan []byte)
+	//..errChan        = make(chan []byte)
 )
 
 func fnStart(bucket, id string) {
-	pubKey = os.Getenv("PUBNUB_PUBLISH_KEY")
-	subKey = os.Getenv("PUBNUB_SUBSCRIBE_KEY")
+//	pubKey = os.Getenv("PUBNUB_PUBLISH_KEY")
+//	subKey = os.Getenv("PUBNUB_SUBSCRIBE_KEY")
 
-	pn = messaging.NewPubnub(pubKey, subKey, "", "", false, "", nil)
-	go func() {
-		for {
-			select {
-			case msg := <-cbChannel:
-				fmt.Println(time.Now().Second(), ": ", string(msg))
-			case msg := <-errChan:
-				fmt.Println(string(msg))
-			default:
-			}
-		}
-	}()
-	pn.Publish(bucket, fmt.Sprintf(`{"type":"alert","running":true, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
+//	pn = messaging.NewPubnub(pubKey, subKey, "", "", false, "", nil)
+//	go func() {
+//		for {
+//			select {
+//			case msg := <-cbChannel:
+//				fmt.Println(time.Now().Second(), ": ", string(msg))
+//			case msg := <-errChan:
+//				fmt.Println(string(msg))
+//			default:
+//			}
+//		}
+//	}()
+//	pn.Publish(bucket, fmt.Sprintf(`{"type":"alert","running":true, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
 }
 
 func fnFinish(bucket, id string) {
-	pn.Publish(bucket, fmt.Sprintf(`{"type":"alert","running":false, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
-	time.Sleep(time.Second * 2)
+//	pn.Publish(bucket, fmt.Sprintf(`{"type":"alert","running":false, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
+//	time.Sleep(time.Second * 2)
 }
 
 func init() {

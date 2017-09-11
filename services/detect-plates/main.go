@@ -8,23 +8,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
-
 	"github.com/openalpr/openalpr/src/bindings/go/openalpr"
-	"github.com/pubnub/go/messaging"
+	"log"
 )
 
 type payloadIn struct {
-	ID          string `json:"id"`
 	URL         string `json:"image_url"`
 	CountryCode string `json:"countrycode"`
 }
 
 type payloadOut struct {
-	ID         string      `json:"id"`
-	ImageURL   string      `json:"image_url"`
-	Rectangles []rectangle `json:"rectangles"`
-	Plate      string      `json:"plate"`
+	GotPlate   bool     `json:"got_plate"`
+	Rectangles []rectangle `json:"rectangles,omitempty"`
+	Plate      string      `json:"plate,omitempty"`
 }
 
 type rectangle struct {
@@ -37,9 +33,6 @@ type rectangle struct {
 func main() {
 	p := new(payloadIn)
 	json.NewDecoder(os.Stdin).Decode(p)
-
-	fnStart(os.Getenv("STORAGE_BUCKET"), p.ID)
-	defer fnFinish(os.Getenv("STORAGE_BUCKET"), p.ID)
 	outfile := "working.jpg"
 
 	alpr := openalpr.NewAlpr(p.CountryCode, "", "runtime_data")
@@ -51,7 +44,7 @@ func main() {
 	}
 	alpr.SetTopN(10)
 
-	fmt.Println("Checking Plate URL ---> " + p.URL)
+	log.Printf("Checking Plate URL ---> %s", p.URL)
 	downloadFile(outfile, p.URL)
 
 	imageBytes, err := ioutil.ReadFile(outfile)
@@ -62,33 +55,33 @@ func main() {
 
 	if len(results.Plates) > 0 {
 		plate := results.Plates[0]
-		fmt.Printf("\n\n FOUND PLATE ------>> %+v", plate)
+		log.Printf("\n\n FOUND PLATE ------>> %+v", plate)
 
 		pout := &payloadOut{
-			ID:         p.ID,
-			ImageURL:   p.URL,
+			GotPlate:true,
 			Rectangles: []rectangle{{StartX: plate.PlatePoints[0].X, StartY: plate.PlatePoints[0].Y, EndX: plate.PlatePoints[2].X, EndY: plate.PlatePoints[2].Y}},
 			Plate:      plate.BestPlate,
 		}
 
-		fmt.Printf("\n\npout! --> %+v ", pout)
+		log.Printf("\n\npout! --> %+v ", pout)
 
 		b := new(bytes.Buffer)
 		json.NewEncoder(b).Encode(pout)
+		fmt.Print(b.String())
 
-		b2 := new(bytes.Buffer)
-		json.NewEncoder(b2).Encode(pout)
-
-		postURL := os.Getenv("FUNC_SERVER_URL") + "/draw"
-		res, _ := http.Post(postURL, "application/json", b)
-		fmt.Println(res.Body)
-
-		alertPostURL := os.Getenv("FUNC_SERVER_URL") + "/alert"
-		resAlert, _ := http.Post(alertPostURL, "application/json", b2)
-		fmt.Println(resAlert.Body)
+		//postURL := os.Getenv("FUNC_SERVER_URL") + "/draw"
+		//res, _ := http.Post(postURL, "application/json", b)
+		//fmt.Println(res.Body)
+		//
+		//alertPostURL := os.Getenv("FUNC_SERVER_URL") + "/alert"
+		//resAlert, _ := http.Post(alertPostURL, "application/json", b2)
+		//fmt.Println(resAlert.Body)
 	} else {
 
-		fmt.Println("No Plates Found!")
+		log.Println("No Plates Found!")
+		b := new(bytes.Buffer)
+		json.NewEncoder(b).Encode(&payloadOut{GotPlate:false})
+		fmt.Print(b.String())
 
 	}
 
@@ -119,35 +112,31 @@ func downloadFile(filepath string, url string) (err error) {
 }
 
 var (
-	pubKey, subKey, ran string
-	pn                  *messaging.Pubnub
-	cbChannel           = make(chan []byte)
-	errChan             = make(chan []byte)
 )
 
-func fnStart(bucket, id string) {
-	pubKey = os.Getenv("PUBNUB_PUBLISH_KEY")
-	subKey = os.Getenv("PUBNUB_SUBSCRIBE_KEY")
+//func fnStart(bucket, id string) {
+//	pubKey = os.Getenv("PUBNUB_PUBLISH_KEY")
+//	subKey = os.Getenv("PUBNUB_SUBSCRIBE_KEY")
+//
+//	pn = messaging.NewPubnub(pubKey, subKey, "", "", false, "", nil)
+//	go func() {
+//		for {
+//			select {
+//			case msg := <-cbChannel:
+//				fmt.Println(time.Now().Second(), ": ", string(msg))
+//			case msg := <-errChan:
+//				fmt.Println(string(msg))
+//			default:
+//			}
+//		}
+//	}()
+//	pn.Publish(bucket, fmt.Sprintf(`{"type":"detect-plates","running":true, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
+//}
 
-	pn = messaging.NewPubnub(pubKey, subKey, "", "", false, "", nil)
-	go func() {
-		for {
-			select {
-			case msg := <-cbChannel:
-				fmt.Println(time.Now().Second(), ": ", string(msg))
-			case msg := <-errChan:
-				fmt.Println(string(msg))
-			default:
-			}
-		}
-	}()
-	pn.Publish(bucket, fmt.Sprintf(`{"type":"detect-plates","running":true, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
-}
-
-func fnFinish(bucket, id string) {
-	pn.Publish(bucket, fmt.Sprintf(`{"type":"detect-plates","running":false, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
-	time.Sleep(time.Second * 2)
-}
+//func fnFinish(bucket, id string) {
+//	pn.Publish(bucket, fmt.Sprintf(`{"type":"detect-plates","running":false, "id":"%s", "runner": "%s"}`, id, os.Getenv("HOSTNAME")), cbChannel, errChan)
+//	time.Sleep(time.Second * 2)
+//}
 
 func init() {
 	if os.Getenv("HOSTNAME") == "" {
