@@ -1,6 +1,4 @@
 {
   "query": "license plate car usa",
-  "num": "20",
-  "countrycode": "us",
-  "service_to_call": "detect-plates"
+  "num": "20"
 }
