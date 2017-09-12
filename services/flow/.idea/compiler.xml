@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="hello" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="api" target="1.8" />
+      <module name="async-thumbnails" target="1.8" />
+      <module name="fdk" target="1.8" />
+      <module name="fdk-examples" target="1.8" />
+      <module name="hello" target="1.8" />
+      <module name="integration-tests" target="1.8" />
+      <module name="qr-code" target="1.8" />
+      <module name="regex-query" target="1.8" />
+      <module name="runtime" target="1.8" />
+      <module name="string-reverse" target="1.8" />
+      <module name="testing" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

@@ -1,9 +1,14 @@
 require 'json'
 require 'rubygems'
 require 'open-uri'
-require 'aws-sdk'
 require 'mini_magick'
-require 'pubnub'
+
+require 'slack-ruby-client'
+
+Slack.configure do |config|
+  config.token = ENV['SLACK_API_TOKEN']
+  fail 'Missing ENV[SLACK_API_TOKEN]!' unless config.token
+end
 
 def download_image(payload_in)
   payload = payload_in
@@ -19,36 +24,10 @@ def download_image(payload_in)
   temp_image_name
 end
 
-def upload_file(image_name)
 
-  Aws.config.update({
-    endpoint: ENV["MINIO_SERVER_URL"],
-    credentials: Aws::Credentials.new(ENV["STORAGE_ACCESS_KEY"], ENV["STORAGE_SECRET_KEY"]),
-    force_path_style: true,
-    region: 'us-east-1'
-  })
-
-  s3 = Aws::S3::Resource.new
-
-  link = nil
-
-	name = File.basename(image_name)
-  obj = s3.bucket(ENV["STORAGE_BUCKET"]).object(name)
-	obj.upload_file(image_name)
-
-	link = obj.public_url()
-
-	link
-end
 
 std_in = STDIN.read
 payload = JSON.parse(std_in)
-
-#msg = "{\"type\":\"draw\",\"running\":true, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
-#pubnub.publish(
-#  message: msg,
-#  channel: ENV["STORAGE_BUCKET"]
-#)
 
 temp_image_name = download_image(payload)
 
@@ -66,12 +45,21 @@ payload["rectangles"].each do |coords|
 end
 
 image_name = "image_#{payload["id"]}.jpg"
+img.resize "300x300"
 img.write(image_name)
 
-link = upload_file(image_name, payload)
 
-#msg = "{\"type\":\"draw\",\"running\":false, \"id\":\"#{payload["id"]}\", \"runner\": \"#{ENV["HOSTNAME"]}\"}"
-#pubnub.publish(
-#  message: msg,
-#  channel: ENV["STORAGE_BUCKET"]
-#)
+Slack.configure do |config|
+  config.token = ENV['SLACK_API_TOKEN']
+end
+client = Slack::Web::Client.new
+client.auth_test
+
+client.files_upload(
+  channels: '#general',
+  as_user: true,
+  file: Faraday::UploadIO.new(image_name, 'image/jpeg'),
+  title: "Found Plate:",
+  filename: 'plate.jpg',
+  initial_comment: 'Have you seen this car?'
+)
