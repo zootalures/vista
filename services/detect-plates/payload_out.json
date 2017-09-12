@@ -1,0 +1,26 @@
+Building image zootalures/detect-plates:0.1.23
+Sending build context to Docker daemon  6.781MB
+Step 1/6 : FROM carimura/detect-plates:master-base
+ ---> 037354ea8fd5
+Step 2/6 : WORKDIR /srv/openalpr
+ ---> Using cache
+ ---> 073b27eede37
+Step 3/6 : RUN go get github.com/openalpr/openalpr/src/bindings/go/openalpr
+ ---> Running in 14329d13ea53
+ ---> 1807756bb709
+Removing intermediate container 14329d13ea53
+Step 4/6 : COPY . /srv/openalpr
+ ---> 877983e30277
+Removing intermediate container 5b4a008e764e
+Step 5/6 : RUN go build -o myapp
+ ---> Running in c45681669508
+ ---> b421e93ace3c
+Removing intermediate container c45681669508
+Step 6/6 : ENTRYPOINT ./myapp
+ ---> Running in 7e8fdaec66f9
+ ---> f13a03cf544e
+Removing intermediate container 7e8fdaec66f9
+Successfully built f13a03cf544e
+Successfully tagged zootalures/detect-plates:0.1.23
+Function zootalures/detect-plates:0.1.23 built successfully.
+{"got_plate":true,"rectangles":[{"startx":834,"starty":702,"endx":1022,"endy":783}],"plate":"D33M016"}
