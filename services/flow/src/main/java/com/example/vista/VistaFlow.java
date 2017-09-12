@@ -43,17 +43,15 @@ public class VistaFlow {
         log.info("Got request {} {}", input.query, input.num);
         postToSlack(String.format("About to start scraping for images from  %s", input.query));
 
-        String scrapeReq = objectMapper.writeValueAsString(input);
-
 
         fnStarted("scraper", "0");
         Flows.currentFlow()
-                .invokeFunction("./scraper", HttpMethod.POST, Headers.emptyHeaders(), scrapeReq.getBytes())
+                .invokeFunction("./scraper", HttpMethod.POST, Headers.emptyHeaders(), toJson(input))
                 .whenComplete(fnComplete("scraper", "0"))
                 .thenCompose((httpResp) -> {
                     ScrapeResp resp = fromJson(httpResp.getBodyAsBytes(), ScrapeResp.class);
                     log.info("Got  {} images", resp.result.size());
-                    List<FlowFuture<?>> tasks = new ArrayList<>();
+                    List<FlowFuture<?>> pendingTasks = new ArrayList<>();
 
                     resp.result.forEach(scrapeResult -> {
                         log.info("starting detection on {}", scrapeResult.image_url);
@@ -70,7 +68,7 @@ public class VistaFlow {
                             if (plateResp.got_plate) {
                                 log.info("Got plate {} in {}", plateResp.plate, scrapeResult.image_url);
 
-
+                                postToSlack("Found plate " + plateResp.plate);
                                 AlertReq alertReq = new AlertReq(plateResp.plate, scrapeResult.image_url);
                                 log.info("Starting alert {}", id);
                                 Flow cur = Flows.currentFlow();
@@ -91,10 +89,10 @@ public class VistaFlow {
                             }
 
                         });
-                        tasks.add(processFuture);
+                        pendingTasks.add(processFuture);
                     });
 
-                    return Flows.currentFlow().allOf(tasks.toArray(new FlowFuture[tasks.size()]));
+                    return Flows.currentFlow().allOf(pendingTasks.toArray(new FlowFuture[pendingTasks.size()]));
 
                 }).whenComplete((t, e) -> {
             postToSlack(String.format("Finished scraping"));
