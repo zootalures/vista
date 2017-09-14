@@ -114,7 +114,7 @@ public class VistaFlow {
 
     private static void fnStarted(String type, String id) {
         log.info("Staring {}:{}", type, id);
-        postToSlack(String.format("Starting fn %s : %s", type, id));
+      //  postToSlack(String.format("Starting fn %s : %s", type, id));
 
     }
 
@@ -122,7 +122,7 @@ public class VistaFlow {
     private static <T> Flows.SerBiConsumer<T, Throwable> fnComplete(String type, String id) {
         return (t, e) -> {
             log.info("Got result from fn {} {}", t, e);
-            postToSlack(String.format("Completed fn %s : %s: error %s", type, id, e == null ? "No" : "Yes"));
+          //  postToSlack(String.format("Completed fn %s : %s: error %s", type, id, e == null ? "No" : "Yes"));
 
         };
     }
