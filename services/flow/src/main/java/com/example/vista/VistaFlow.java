@@ -31,7 +31,7 @@ public class VistaFlow {
     public static void configure(RuntimeContext ctx) {
 
         Slack slack = Slack.getInstance();
-        ApiToken slackToken = ApiToken.of(ctx.getConfigurationByKey("SLACK_API_TOKEN").orElseThrow(() -> new RuntimeException("Missing pubnub subscribe key ")));
+        ApiToken slackToken = ApiToken.of(ctx.getConfigurationByKey("SLACK_API_TOKEN").orElseThrow(() -> new RuntimeException("Missing SLACK api  key ")));
 
         VistaFlow.slack = slack.shortcut(slackToken);
 
